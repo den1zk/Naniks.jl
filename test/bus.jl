@@ -1,4 +1,4 @@
-using Base.Test
+using Test
 include("../src/Naniks.jl")
 
 bytes(s) = convert(Array{UInt8,1}, s)
