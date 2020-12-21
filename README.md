@@ -8,7 +8,7 @@ An iterator based [Nanomsg](http://nanomsg.org/) connector for [Julia](http://ju
 Naniks is not regintered yet.  Therefore, you need to install by cloning the Github repository ao follows:
 
 ```julia
-Pkg.clone("https://github.com/MatriksData/Naniks.jl.git")
+Pkg.clone("https://github.com/den1zk/Naniks.jl.git")
 ```
 
 ## Usage

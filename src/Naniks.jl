@@ -1,6 +1,6 @@
 module NN
 
-using Libdl, Distributed
+#using Libdl, Distributed
 
 const libnn = "libnanomsg"
 const IDLE = 0.005
@@ -50,6 +50,7 @@ macro listenerfn()
             flags = NN_DONTWAIT
             #const EAGAIN = Cint(11)
             while true
+                println(socket)
                 len = ccall((:nn_recv, libnn), Cint, (Cint, Ptr{Nothing}, Csize_t, Cint),
                     socket.id, buff_ref, NN_MSG, flags)
                 #len > 0 && println("msg sz: " * string(len))
@@ -81,7 +82,7 @@ function bind(socket::Socket, url::String)
     eid < 0 && throw(error_message("Socket bind error: "))
     socket.endpoint_id = eid
     @async remote_do(@listenerfn(), rand(1:nprocs()), socket)
-    info("Bind..." * string(socket.id))
+    println("Bind..." * string(socket.id))
     sleep(0.1)
     socket
 end
@@ -135,11 +136,11 @@ end
 Base.take!(socket::Socket) = Base.take!(socket.rx)
 
 # TODO Use socket status for state
-Base.start(socket::Socket) = nothing
+#Base.start(socket::Socket) = nothing
 
-Base.next(socket::Socket, state) = (take!(socket), nothing)
+#Base.next(socket::Socket, state) = (Base.take!(socket), nothing)
 
-Base.done(socket::Socket, state) = false
+#Base.done(socket::Socket, state) = false
 
 function close(socket::Socket)
     ret = ccall((:nn_close, libnn), Cint, (Cint,), socket.id)
@@ -156,12 +157,14 @@ function shutdown(socket::Socket)   # TODO parameter 'how'
 end
 
 export Socket, bind, connect, send, shutdown, put!, take!
+#, bind, connect, send, shutdown
+#, put!, take!
 
 end             # module NN
 
 module Naniks
 
-using NN
+#using NN
 export NN
 
 end

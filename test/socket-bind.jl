@@ -1,9 +1,9 @@
 using Test
 
-include("../src/naniks.jl")
-using NN
+include("../src/Naniks.jl")
+#using NN
 
-socket = Socket(Pull)
-@test typeof( socket ) == Socket
-@test typeof(nn_bind(socket, "tcp://127.0.0.1:3000")) == Socket
+socket = NN.Socket(NN.Pull)
+@test typeof( socket ) == NN.Socket
+@test typeof(NN.bind(socket, "tcp://127.0.0.1:3000")) == NN.Socket
 @test socket.endpoint_id >= 0
