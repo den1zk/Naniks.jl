@@ -1,10 +1,8 @@
 module NN
 
-#using Libdl, Distributed
+#using Libdl
 
 const libnn = "libnanomsg"
-const IDLE = 0.005
-
 Libdl.dlopen(libnn)
 include("nn_sys.jl")
 
@@ -45,13 +43,13 @@ macro listenerfn()
     quote
         function listener(socket::Socket)
             buff = Array{UInt8}(NN_MSG)
-            buff_ref = pointer(buff)
+            const buff_ref = pointer(buff)
             #flags = Cint(0)
             flags = NN_DONTWAIT
             #const EAGAIN = Cint(11)
+            const IDLE = 0.005
             while true
-                println(socket)
-                len = ccall((:nn_recv, libnn), Cint, (Cint, Ptr{Nothing}, Csize_t, Cint),
+                len = ccall((:nn_recv, libnn), Cint, (Cint, Ptr{Void}, Csize_t, Cint),
                     socket.id, buff_ref, NN_MSG, flags)
                 #len > 0 && println("msg sz: " * string(len))
                 if len < 0
@@ -66,12 +64,12 @@ macro listenerfn()
 		try
 			msg = Array{UInt8}(len)
 			copy!(msg, 1, buff, 1, len)
-			Base.put!(socket.rx, msg)
+			Base.put!(socket.rx, msg)				
 	        catch ex
 			println(ex)
-			println(len)
+			println(len)		
 			continue
-                end
+                end 
             end
         end
     end
@@ -82,7 +80,7 @@ function bind(socket::Socket, url::String)
     eid < 0 && throw(error_message("Socket bind error: "))
     socket.endpoint_id = eid
     @async remote_do(@listenerfn(), rand(1:nprocs()), socket)
-    println("Bind..." * string(socket.id))
+    info("Bind..." * string(socket.id))
     sleep(0.1)
     socket
 end
@@ -100,8 +98,8 @@ end
 
 function recv(socket::Socket)
     buff = Array{UInt8}(NN_MSG)
-    buff_ref = pointer(buff)
-    len = ccall((:nn_recv, libnn), Cint, (Cint, Ptr{Nothing}, Csize_t, Cint), socket.id, buff_ref, NN_MSG, Int32(0))
+    const buff_ref = pointer(buff)
+    len = ccall((:nn_recv, libnn), Cint, (Cint, Ptr{Void}, Csize_t, Cint), socket.id, buff_ref, NN_MSG, Int32(0))
 	if len < 0
         	err = ccall((:nn_errno, libnn), Cint, ())
         	println(error_message("Message receive " * string(len) * ": "))
@@ -115,7 +113,7 @@ end
 function send(socket::Socket, msg::String)
     size = convert(Csize_t, length(msg))
     msg_ptr = pointer(msg)
-    len = ccall((:nn_send, libnn), Cint, (Cint,Ptr{Nothing},Csize_t,Cint), socket.id, convert(Ptr{Nothing}, msg_ptr), size, Int32(0))
+    len = ccall((:nn_send, libnn), Cint, (Cint,Ptr{Void},Csize_t,Cint), socket.id, convert(Ptr{Void}, msg_ptr), size, Int32(0))
     if len == -1
         throw(error_message("Socket send failed"))
     end
@@ -136,11 +134,11 @@ end
 Base.take!(socket::Socket) = Base.take!(socket.rx)
 
 # TODO Use socket status for state
-#Base.start(socket::Socket) = nothing
+Base.start(socket::Socket) = nothing
 
-#Base.next(socket::Socket, state) = (Base.take!(socket), nothing)
+Base.next(socket::Socket, state) = (take!(socket), nothing)
 
-#Base.done(socket::Socket, state) = false
+Base.done(socket::Socket, state) = false
 
 function close(socket::Socket)
     ret = ccall((:nn_close, libnn), Cint, (Cint,), socket.id)
@@ -157,14 +155,12 @@ function shutdown(socket::Socket)   # TODO parameter 'how'
 end
 
 export Socket, bind, connect, send, shutdown, put!, take!
-#, bind, connect, send, shutdown
-#, put!, take!
 
 end             # module NN
 
 module Naniks
 
-#using NN
+using NN
 export NN
 
 end
